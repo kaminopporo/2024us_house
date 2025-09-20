@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>2024米国下院選挙</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        /* HTMLとBody要素をビューポートいっぱいに広げる */
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #ffffff;
+        }
+
+        /* コンテナ（サイドバーと地図を横並びにする） */
+        .container {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            gap: 15px;
+            padding: 15px;
+            /* PCレイアウトの全体余白 */
+            box-sizing: border-box;
+            align-items: stretch;
+            position: relative;
+            /* 情報ボタンの基準にするため追加 */
+        }
+
+        /* サイドバーのスタイル */
+        .sidebar {
+            width: 300px;
+            background-color: #fff2cc;
+            padding: 30px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            /* サイドバー全体でのスクロールは維持 */
+            position: relative;
+            border-radius: 15px;
+        }
+
+        /* スクロールバーのスタイル（WebKitブラウザ向け） */
+        .sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: #FFFFFF00;
+            border-radius: 15px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 15px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* ドラッグハンドルのスタイル (非表示にする) */
+        .sidebar-resizer {
+            display: none;
+        }
+
+        /* 地図が表示されるdiv要素 */
+        #map {
+            flex-grow: 1;
+            height: 100%;
+            width: auto;
+            border-radius: 15px;
+            /* PCレイアウトの地図の角を丸く */
+            overflow: hidden;
+        }
+
+        /* サイドバー内の各セクションのスタイル */
+        .sidebar h1 {
+            font-size: 2em;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 5px;
+            /* タイトルと詳細情報の間のマージンを詰める */
+            text-align: left;
+            color: #990000;
+            line-height: 1.3;
+            display: block;
+        }
+
+        /* Info button style - 地図の右上に配置 */
+        .info-button {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: none;
+            border: none;
+            border-radius: 0;
+            width: 30px;
+            height: 30px;
+            font-family: 'Material Icons';
+            font-size: 20px;
+            color: #666;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: none;
+            transition: color 0.3s ease, transform 0.2s ease;
+            z-index: 600;
+        }
+
+        .info-button:hover {
+            color: #333;
+            transform: scale(1.02);
+        }
+
+        .legend {
+            margin-bottom: 30px;
+        }
+
+        .legend h2,
+        .details h2 {
+            font-size: 1.4em;
+            font-weight: 500;
+            margin-top: 0;
+            margin-bottom: 5px;
+            /* 詳細情報のタイトル下マージンを詰める */
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 5px;
+            /* 詳細情報のタイトル下パディングを詰める */
+            color: #34495e;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            color: #4a4a4a;
+            padding: 5px 0;
+            transition: background-color 0.2s ease;
+            border-radius: 15px;
+            cursor: pointer;
+            /* クリック可能であることを示す */
+        }
+
+        /* 選択された凡例項目のスタイル */
+        .legend-item.selected {
+            background-color: #e9e9e9;
+            font-weight: 600;
+            color: #990000;
+        }
+
+        /* カラーシンボルの角を丸くする */
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            margin-right: 15px;
+            flex-shrink: 0;
+            border-radius: 1px;
+            /* ここを変更 */
+        }
+
+        /* 透明度凡例用のスタイル */
+        .legend-opacity-r {
+            background-color: #ff0000;
+        }
+
+        /* 共和党 */
+        .legend-opacity-d {
+            background-color: #0000ff;
+        }
+
+        /* 民主党 */
+        .legend-opacity-lib {
+            background-color: #f1c232;
+        }
+
+        /* Libertarian */
+        .legend-opacity-green {
+            background-color: #38761d;
+        }
+
+        /* Green */
+        .legend-opacity-con {
+            background-color: #9900ff;
+        }
+
+        /* Constitution */
+        .legend-opacity-other {
+            background-color: #b7b7b7;
+        }
+
+        /* Other */
+
+        /* 当選政党の凡例スタイル */
+        .legend-color-w {
+            background: linear-gradient(to right, #0000ff, #ff0000);
+            /* 複数の色をグラデーションで */
+        }
+
+        /* 選択不可の項目スタイル */
+        .legend-item.unselectable {
+            cursor: not-allowed;
+            /* マウスカーソルを変更 */
+            background-color: transparent;
+            /* ホバーアクションをなくす */
+            font-weight: normal;
+            /* 太字をなくす */
+            color: #4a4a4a;
+            /* 文字色を元に戻す */
+        }
+
+        .details {
+            margin-top: 15px;
+            /* 詳細情報セクション全体の上のマージンを詰める */
+            flex-grow: 1;
+            /* 詳細情報が利用可能なスペースを最大限使うようにする */
+            display: flex;
+            flex-direction: column;
+            /* flexboxを適用して子要素の配置を制御 */
+        }
+
+        .details h3 {
+            font-size: 1.2em;
+            font-weight: 500;
+            margin-top: 20px;
+            /* 修正: 見出しと前の項目の間隔をさらに広げる */
+            margin-bottom: 5px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 5px;
+            color: #2c3e50;
+        }
+
+        /* PCレイアウトの詳細情報パネルの段落スタイル */
+        .details p {
+            font-size: 1.05em;
+            margin-bottom: 0;
+            /* 各行間のマージンを詰める */
+            line-height: 1;
+            /* 各行の行間を詰める */
+            color: #2c3e50;
+            /* テキストの色をより濃く */
+        }
+
+        /* 詳細情報パネルのスタイル */
+        #info-panel {
+            background-color: #fdfdfd;
+            border-radius: 15px;
+            padding: 10px 15px;
+            /* パネル全体のパディングを詰める */
+            flex-grow: 1;
+            /* 親要素の残りの高さを埋めるようにする */
+            overflow-y: auto;
+            /* 必要に応じて自動でスクロールバーを表示 */
+        }
+
+        /* PCレイアウト時のサイドパネルの選挙区名・地域名のスタイルを調整 */
+        #info-panel h2 {
+            font-size: 1.3em;
+            margin-top: 0;
+            margin-bottom: 0;
+            color: #2c3e50;
+            border-bottom: none;
+            /* 区切り線を削除 */
+        }
+
+        #info-panel p {
+            font-size: 0.9em;
+            /* フォントサイズも少し小さくして行数を稼ぐ */
+            margin-top: 0;
+            margin-bottom: 5px;
+            /* 各行間のマージンを詰める */
+            line-height: 1;
+            /* 各行の行間を詰める */
+            color: #2c3e50;
+            /* テキストの色をより濃く */
+        }
+
+        /* ハイライト用スタイル */
+        .highlighted-info-text {
+            color: #990000 !important;
+        }
+
+        /* 説明モーダル/パネルのスタイル */
+        .explanation-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .explanation-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .explanation-panel {
+            background-color: #ffffff;
+            padding: 30px;
+            /* PCレイアウトのパディング */
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .explanation-overlay.active .explanation-panel {
+            transform: translateY(0);
+        }
+
+        .explanation-panel h2 {
+            font-size: 1.8em;
+            color: #990000;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+
+        .explanation-panel p {
+            font-size: 1.1em;
+            line-height: 1.7;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .explanation-panel ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .explanation-panel li {
+            font-size: 1.05em;
+            line-height: 1.6;
+            margin-bottom: 8px;
+            color: #444;
+        }
+
+        /* 新しい凡例コンテナのスタイル */
+        .explanation-panel .legend-in-explanation {
+            margin-top: 25px;
+            margin-bottom: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .explanation-panel .legend-in-explanation .legend-item {
+            font-size: 1em;
+            /* 説明パネル内の凡例は少し小さく */
+            margin-bottom: 8px;
+        }
+
+        /* 説明パネル内のカラーシンボルの角を丸くする */
+        .explanation-panel .legend-in-explanation .legend-color {
+            width: 24px;
+            height: 24px;
+            margin-right: 15px;
+            border-radius: 15px;
+            box-sizing: border-box;
+        }
+
+        .explanation-panel .close-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 2em;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .explanation-panel .close-button:hover {
+            color: #333;
+        }
+
+        /* 新しく追加する区切り線 */
+        .explanation-panel .section-divider {
+            border-top: 1px solid #e0e0e0;
+            margin: 20px 0;
+        }
+
+        /* LeafletのSVG要素内にパターンを定義するためのCSSを追加 */
+        #map svg defs {
+            position: absolute;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+        }
+
+        /* --- スマートフォン向けのスタイル (画面幅が768px以下の場合) --- */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                padding: 7.5px;
+                /* 修正: スマホの全体余白を半分に */
+                gap: 0;
+                height: 100%;
+                width: 100%;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            #map {
+                flex-grow: 1;
+                height: 100%;
+                /* border-radius: 12px; はPC版のスタイルが継承されるため、ここでの変更は不要 */
+                box-shadow: none;
+                /* スマホでは影をなくす（任意） */
+                overflow: hidden;
+            }
+
+            #info-panel {
+                display: none;
+            }
+
+            /* Info button on mobile */
+            .info-button {
+                top: 12.5px;
+                /* 修正: スマホでもPCと同様に情報ボタンを15pxの位置に */
+                right: 12.5px;
+                /* 修正: スマホでもPCと同様に情報ボタンを15pxの位置に */
+                width: 35px;
+                height: 35px;
+                /* Material Iconsに対応するためにfont-sizeを調整 */
+                font-size: 24px;
+                z-index: 600;
+            }
+
+            /* Leafletポップアップのスタイル調整 (変更箇所) */
+            .leaflet-popup-content-wrapper {
+                border-radius: 15px;
+                padding: 2px;
+                /* パディングをさらに減らす */
+                line-height: 1.1;
+                /* 行間をさらに詰める */
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+                max-width: calc(100vw - 30px);
+                /* 新規追加: 最大幅を画面幅から余白を引いた値に */
+            }
+
+            .leaflet-popup-content h2 {
+                font-size: 1.2em;
+                /* フォントサイズを調整 */
+                margin-top: 0;
+                margin-bottom: 3px;
+                /* マージンをさらに減らす */
+                line-height: 1.1;
+                /* 行間をさらに詰める */
+                color: #2c3e50;
+            }
+
+            /* スマホポップアップのセクション見出しの文字サイズを小さく */
+            .leaflet-popup-content h3 {
+                font-size: 1.1em;
+                /* フォントサイズを調整 */
+                margin-top: 5px;
+                margin-bottom: 2px;
+                border-bottom: 1px solid #e0e0e0;
+                /* 追加: 区切り線 */
+                padding-bottom: 3px;
+                /* 追加: 区切り線と文字の間のスペース */
+            }
+
+            /* スマホポップアップの得票率セクションの空白調整 */
+            .leaflet-popup-content h3:first-of-type {
+                margin-bottom: 2px;
+            }
+
+            .leaflet-popup-content h3:not(:first-of-type) {
+                margin-top: 15px;
+                /* 修正: 見出しと前の項目の間隔を広げる */
+            }
+
+            .leaflet-popup-content p {
+                font-size: 1em;
+                /* 段落のフォントサイズをさらに小さく */
+                margin-top: 0;
+                /* 段落の上マージンを削除 */
+                margin-bottom: 5px;
+                /* 修正: 本文間隔をさらに広げる */
+                line-height: 1.2;
+                /* 行間を詰める */
+            }
+
+            /* 説明パネルのスマホ対応 */
+            .explanation-panel {
+                margin: auto;
+                align-self: center;
+                width: 90vw;
+                /* 幅を広げる */
+                height: 90vh;
+                /* 高さを広げる */
+                max-width: none;
+                max-height: none;
+                padding: 20px;
+                /* パディングを調整 */
+                box-sizing: border-box;
+            }
+
+            .explanation-panel h2 {
+                font-size: 1.5em;
+            }
+
+            .explanation-panel p,
+            .explanation-panel li {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <button id="infoButton" class="info-button" aria-label="地図の説明を表示">
+            <span class="material-icons">info</span>
+        </button>
+        <div class="sidebar" id="sidebar">
+            <h1>
+                2024米国下院選挙
+            </h1>
+            <div class="details">
+                <h2>詳細情報</h2>
+                <div id="info-panel">地図をクリックするとここに情報が表示されます。</div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+    <div id="explanationOverlay" class="explanation-overlay">
+        <div class="explanation-panel">
+            <button class="close-button" id="closeExplanationButton" aria-label="説明を閉じる">&times;</button>
+            <h2>地図の説明</h2>
+            <p>この地図は、2024年11月5日に行われたアメリカ下院選挙の選挙区ごとの当選政党及び主要政党の得票率を示しています。</p>
+            <p>各選挙区は、選択された政党の色で塗り分けられ、色の濃さはその政党の得票率に比例しています（高得票率ほど色が濃くなります）。</p>
+            <div class="legend-in-explanation">
+                <h3>表示政党を選択</h3>
+                <div class="legend-item selected" data-party-name="win-party">
+                    <div class="legend-color legend-color-w"></div>
+                    当選政党
+                </div>
+                <div class="legend-item" data-party-name="1st-party">
+                    <div class="legend-color legend-color-w"></div>
+                    初回最多得票政党
+                </div>
+                <div class="legend-item" data-party-name="R">
+                    <div class="legend-color legend-opacity-r"></div>
+                    R: 共和党(初回投票)
+                </div>
+                <div class="legend-item" data-party-name="D">
+                    <div class="legend-color legend-opacity-d"></div>
+                    D: 民主党(初回投票)
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+            <p><strong>特殊な投票制度</strong>:
+                メイン州とアラスカ州ではRCV（順位付け投票）、ルイジアナ州とジョージア州では二回投票制が導入されています。これらの手法を採用する選挙区では、初回投票で過半数を達した候補者がいなかった場合、初回投票結果の各候補者得票率と最終結果を反映した当選政党得票率が異なります。
+            </p>
+            <p><strong>クリックで詳細</strong>: 地図上の選挙区をクリックすると、サイドバー（PC）またはポップアップ（スマートフォン）にその選挙区の各政党の得票率詳細が表示されます。</p>
+            <p><strong>データソース</strong>: <a href="https://electionlab.mit.edu/"
+                    target="_blank">MIT</a>が公開する開票結果のデータに基づいています。</p>
+        </div>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Leafletマップの初期化
+        var map = L.map('map', {
+            zoomControl: false
+        });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        }).addTo(map);
+
+        // 地図の初期表示をワシントンD.C.周辺に設定
+        const dcCoordinates = [38.895, -77.036];
+        const initialZoom = 9;
+        map.setView(dcCoordinates, initialZoom);
+
+        // --- GeoJSONデータの読み込みと表示 ---
+        var geojsonDataPath = '2024下.json';
+        var geojsonLayer;
+        const municipalityLayers = new Map();
+        let currentSelectedAdministrativeCode = null;
+        let currentViewMode = 'win-party';
+        let highlightColor = '#990000';
+
+        // 米国選挙の政党属性を定義
+        const partyAttributes = {
+            "R": { color: '#ff0000', fullName: '共和党' },
+            "D": { color: '#0000ff', fullName: '民主党' }
+        };
+
+        // 無効票の値を定義
+        const INVALID_VALUE = 999999999;
+        const INVALID_TEXT = '無投';
+
+
+        // 値をチェックして文字列を返すヘルパー関数
+        function formatValue(value, isPercentage = false) {
+            // ここに、数値以外のnullやundefinedなどの値を処理するロジックを配置
+            if (value === null || value === undefined) {
+                return null;
+            }
+
+            // INVALID_VALUEの処理
+            if (value === INVALID_VALUE) {
+                return INVALID_TEXT;
+            }
+
+            // 数値の場合の処理
+            if (typeof value === 'number') {
+                if (isPercentage) {
+                    return `${value.toFixed(2)}%`;
+                }
+                return value.toLocaleString();
+            }
+            return value || null;
+        }
+
+
+        // 候補者情報をソートするヘルパー関数
+        function sortCandidates(properties) {
+            const candidates = [];
+            for (let i = 1; i <= 7; i++) {
+                const percentage = parseFloat(properties[`GIS2024下_percentage${i}`]);
+                if (!isNaN(percentage)) {
+                    candidates.push({
+                        party: properties[`GIS2024下_party${i}`],
+                        candidate: properties[`GIS2024下_candidate${i}`],
+                        percentage: percentage,
+                        vote: parseInt(properties[`GIS2024下_vote${i}`])
+                    });
+                }
+            }
+            candidates.sort((a, b) => b.percentage - a.percentage);
+            return candidates;
+        }
+
+        fetch(geojsonDataPath)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('GeoJSONファイルの読み込みに失敗しました: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("GeoJSONデータが正常に読み込まれました:", data);
+
+                // 地図のポリゴンスタイルを決定する関数
+                function style(feature) {
+                    const properties = feature.properties;
+                    if (!properties) {
+                        return {
+                            fillColor: '#ccc',
+                            fillOpacity: 0.0,
+                            weight: 0,
+                            opacity: 0,
+                            color: 'white'
+                        };
+                    }
+
+                    let fillColor = '#cccccc';
+                    let fillOpacity = 0.0;
+                    let percentageValue;
+                    let partyCode;
+
+                    switch (currentViewMode) {
+                        case 'win-party':
+                            partyCode = properties['GIS2024下_win-party'];
+                            percentageValue = parseFloat(properties['GIS2024下_win-percentage']);
+                            fillColor = partyAttributes[partyCode] ? partyAttributes[partyCode].color : '#cccccc';
+                            break;
+                        case '1st-party':
+                            partyCode = properties['GIS2024下_1st-party'];
+                            percentageValue = parseFloat(properties['GIS2024下_1st-percentage']);
+                            fillColor = partyAttributes[partyCode] ? partyAttributes[partyCode].color : '#cccccc';
+                            break;
+                        case 'R':
+                            partyCode = 'R';
+                            percentageValue = parseFloat(properties['GIS2024下_R率']);
+                            fillColor = partyAttributes[partyCode] ? partyAttributes[partyCode].color : '#cccccc';
+                            break;
+                        case 'D':
+                            partyCode = 'D';
+                            percentageValue = parseFloat(properties['GIS2024下_D率']);
+                            fillColor = partyAttributes[partyCode] ? partyAttributes[partyCode].color : '#cccccc';
+                            break;
+                        default:
+                            break;
+                    }
+
+                    if (!isNaN(percentageValue)) {
+                        fillOpacity = percentageValue / 100.0;
+                    }
+
+                    return {
+                        fillColor: fillColor,
+                        fillOpacity: fillOpacity,
+                        weight: 1,
+                        opacity: 1,
+                        color: 'white',
+                        dashArray: '3'
+                    };
+                }
+
+
+                // フィーチャがクリックされた時の処理
+                function clickFeature(e) {
+                    const layer = e.target;
+                    const administrativeCode = layer.feature.properties['GEOID'];
+
+                    if (currentSelectedAdministrativeCode && currentSelectedAdministrativeCode !== administrativeCode) {
+                        if (municipalityLayers.has(currentSelectedAdministrativeCode)) {
+                            municipalityLayers.get(currentSelectedAdministrativeCode).forEach(muniLayer => {
+                                geojsonLayer.resetStyle(muniLayer);
+                            });
+                        }
+                    }
+
+                    if (administrativeCode && municipalityLayers.has(administrativeCode)) {
+                        municipalityLayers.get(administrativeCode).forEach(muniLayer => {
+                            muniLayer.setStyle({
+                                weight: 3,
+                                color: highlightColor,
+                                dashArray: '',
+                            });
+                            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                                muniLayer.bringToFront();
+                            }
+                        });
+                        currentSelectedAdministrativeCode = administrativeCode;
+                    }
+
+                    var feature = e.target.feature;
+                    var properties = feature.properties;
+                    let infoContent = '';
+
+                    if (properties) {
+
+                        // 選挙区名と州名
+                        let namelsad = properties['NAMELSAD'] || null;
+                        const state = properties['GIS2024下_state'] || null;
+
+                        // ここから修正
+                        if (namelsad) {
+                            // "Congressional District"を削除
+                            namelsad = namelsad.replace(/Congressional District/g, '').trim();
+
+                            // "(at Large)"を"at Large"に置換
+                            namelsad = namelsad.replace(/\(at Large\)/g, 'at Large').trim();
+                        }
+
+                        if (namelsad || state) {
+                            infoContent += `<h2>${state || ''}${state && namelsad ? ': ' : ''}${namelsad || ''}</h2>`;
+                        }
+
+                        // 当選政党
+                        const winParty = properties['GIS2024下_win-party'] || null;
+                        const winCandidate = properties['GIS2024下_win-candidate'] || null;
+                        const winVote = formatValue(properties['GIS2024下_win-vote']);
+                        const winPercentage = formatValue(properties['GIS2024下_win-percentage'], true);
+                        if (winParty || winCandidate || winVote || winPercentage) {
+                            infoContent += `<h3>当選政党</h3>`;
+                            infoContent += `<p class="${currentViewMode === 'win-party' ? 'highlighted-info-text' : ''}">`;
+                            if (winParty) infoContent += `<b>${winParty}</b>: `;
+                            if (winCandidate) infoContent += `${winCandidate}<br>`;
+                            if (winVote || winPercentage) infoContent += `${winPercentage} (${winVote}票)`;
+                            infoContent += `</p>`;
+                        }
+
+                        // 初回最多得票政党
+                        const firstParty = properties['GIS2024下_1st-party'] || null;
+                        const firstCandidate = properties['GIS2024下_1st-candidate'] || null;
+                        const firstVote = formatValue(properties['GIS2024下_1st-vote']);
+                        const firstPercentage = formatValue(properties['GIS2024下_1st-percentage'], true);
+                        if (firstParty || firstCandidate || firstVote || firstPercentage) {
+                            infoContent += `<h3>初回最多得票政党</h3>`;
+                            infoContent += `<p class="${currentViewMode === '1st-party' ? 'highlighted-info-text' : ''}">`;
+                            if (firstParty) infoContent += `<b>${firstParty}</b>: `;
+                            if (firstCandidate) infoContent += `${firstCandidate}<br>`;
+                            if (firstVote || firstPercentage) infoContent += `${firstPercentage} (${firstVote}票)`;
+                            infoContent += `</p>`;
+                        }
+
+
+
+
+                        // 主要政党の得票率をソートして表示
+                        const rVote = properties['GIS2024下_R票'];
+                        const dVote = properties['GIS2024下_D票'];
+                        const rRate = properties['GIS2024下_R率'];
+                        const dRate = properties['GIS2024下_D率'];
+
+                        // R票またはD票のプロパティが存在すればセクションを表示
+                        if (rVote !== undefined || dVote !== undefined) {
+                            infoContent += `<h3>主要政党初回得票率</h3>`;
+
+                            // R党の情報表示
+                            if (rVote !== undefined && rVote !== null) {
+                                if (rVote === INVALID_VALUE) {
+                                    infoContent += `<p class="${currentViewMode === 'R' ? 'highlighted-info-text' : ''}"><b>R</b>: ${formatValue(rRate, true)} (${INVALID_TEXT}票)</p>`;
+                                } else {
+                                    infoContent += `<p class="${currentViewMode === 'R' ? 'highlighted-info-text' : ''}"><b>R</b>: ${formatValue(rRate, true)} (${formatValue(rVote)}票)</p>`;
+                                }
+                            }
+
+                            // D党の情報表示
+                            if (dVote !== undefined && dVote !== null) {
+                                if (dVote === INVALID_VALUE) {
+                                    infoContent += `<p class="${currentViewMode === 'D' ? 'highlighted-info-text' : ''}"><b>D</b>: ${formatValue(dRate, true)} (${INVALID_TEXT}票)</p>`;
+                                } else {
+                                    infoContent += `<p class="${currentViewMode === 'D' ? 'highlighted-info-text' : ''}"><b>D</b>: ${formatValue(dRate, true)} (${formatValue(dVote)}票)</p>`;
+                                }
+                            }
+                        }
+
+
+
+
+                        // 候補者別得票率をソートして表示
+                        const candidates = sortCandidates(properties);
+                        if (candidates.length > 0) {
+                            infoContent += `<h3>候補者別初回得票率</h3>`;
+                            candidates.forEach(c => {
+                                const formattedVote = formatValue(c.vote);
+                                const formattedPercentage = formatValue(c.percentage, true);
+                                if (c.candidate || formattedVote || formattedPercentage) {
+                                    infoContent += `<p>`;
+                                    if (c.party) infoContent += `<b>${c.party}</b>: `;
+                                    if (c.candidate) infoContent += `${c.candidate}<br>`;
+                                    if (formattedVote || formattedPercentage) infoContent += `${formattedPercentage} (${formattedVote}票)`;
+                                    infoContent += `</p>`;
+                                }
+                            });
+                        }
+
+                        // 情報がない場合の表示
+                        if (infoContent === `<h2>${state || ''}${state && namelsad ? ': ' : ''}${namelsad || ''}</h2>`) {
+                            infoContent += `<p>地物情報がありません。</p>`;
+                        }
+                    } else {
+                        infoContent = `<p>地物情報がありません。</p>`;
+                    }
+
+                    if (window.innerWidth <= 768) {
+                        L.popup()
+                            .setLatLng(e.latlng)
+                            .setContent(infoContent)
+                            .openOn(map);
+                    } else {
+                        var infoPanel = document.getElementById('info-panel');
+                        infoPanel.innerHTML = infoContent;
+                    }
+                }
+
+                function onEachFeature(feature, layer) {
+                    const administrativeCode = feature.properties['GEOID'];
+                    if (administrativeCode) {
+                        if (!municipalityLayers.has(administrativeCode)) {
+                            municipalityLayers.set(administrativeCode, []);
+                        }
+                        municipalityLayers.get(administrativeCode).push(layer);
+                    }
+                    layer.on({
+                        click: clickFeature
+                    });
+                }
+
+                map.on('click', function (e) {
+                    if (!e.originalEvent.target.classList.contains('leaflet-interactive')) {
+                        if (currentSelectedAdministrativeCode && municipalityLayers.has(currentSelectedAdministrativeCode)) {
+                            municipalityLayers.get(currentSelectedAdministrativeCode).forEach(muniLayer => {
+                                geojsonLayer.resetStyle(muniLayer);
+                            });
+                        }
+                        currentSelectedAdministrativeCode = null;
+                        document.getElementById('info-panel').innerHTML = '地図をクリックするとここに情報が表示されます。';
+                    }
+                });
+
+
+                geojsonLayer = L.geoJSON(data, {
+                    style: style,
+                    onEachFeature: onEachFeature
+                }).addTo(map);
+
+                // GeoJSON全体にフィットするのではなく、初期ビューを設定
+                // var bounds = geojsonLayer.getBounds();
+                // if (bounds.isValid()) {
+                //     map.fitBounds(bounds);
+                // }
+
+                updateMapStyle();
+            })
+            .catch(error => {
+                console.error('GeoJSONファイルの読み込みまたは処理中にエラーが発生しました:', error);
+            });
+
+        function updateMapStyle() {
+            if (geojsonLayer) {
+                geojsonLayer.eachLayer(function (layer) {
+                    geojsonLayer.resetStyle(layer);
+                });
+            }
+        }
+
+        // --- 説明モーダルのJavaScript制御 ---
+        const infoButton = document.getElementById('infoButton');
+        const explanationOverlay = document.getElementById('explanationOverlay');
+        const closeExplanationButton = document.getElementById('closeExplanationButton');
+        const legendItems = document.querySelectorAll('.legend-in-explanation .legend-item:not(.unselectable)');
+
+        window.addEventListener('load', () => {
+            explanationOverlay.classList.add('active');
+        });
+
+        infoButton.addEventListener('click', () => {
+            explanationOverlay.classList.add('active');
+        });
+
+        closeExplanationButton.addEventListener('click', () => {
+            explanationOverlay.classList.remove('active');
+        });
+
+        explanationOverlay.addEventListener('click', (e) => {
+            if (e.target === explanationOverlay) {
+                explanationOverlay.classList.remove('active');
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && explanationOverlay.classList.contains('active')) {
+                explanationOverlay.classList.remove('active');
+            }
+        });
+
+        legendItems.forEach(item => {
+            item.addEventListener('click', () => {
+                legendItems.forEach(li => li.classList.remove('selected'));
+                item.classList.add('selected');
+                currentViewMode = item.dataset.partyName;
+                updateMapStyle();
+                console.log("Current view mode set to:", currentViewMode);
+            });
+        });
+    </script>
+</body>
+
+</html>
