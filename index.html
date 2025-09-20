@@ -834,35 +834,38 @@
                         }
 
 
-
-
                         // 主要政党の得票率をソートして表示
                         const rVote = properties['GIS2024下_R票'];
                         const dVote = properties['GIS2024下_D票'];
                         const rRate = properties['GIS2024下_R率'];
                         const dRate = properties['GIS2024下_D率'];
 
+                        // 主要政党のデータを配列に格納
+                        const majorParties = [];
+                        if (rVote !== undefined && rVote !== null) {
+                            majorParties.push({ party: 'R', vote: rVote, rate: rRate });
+                        }
+                        if (dVote !== undefined && dVote !== null) {
+                            majorParties.push({ party: 'D', vote: dVote, rate: dRate });
+                        }
+
+                        // 票数が多い順にソート
+                        majorParties.sort((a, b) => {
+                            const aVote = a.vote === INVALID_VALUE ? -1 : a.vote;
+                            const bVote = b.vote === INVALID_VALUE ? -1 : b.vote;
+                            return bVote - aVote;
+                        });
+
                         // R票またはD票のプロパティが存在すればセクションを表示
-                        if (rVote !== undefined || dVote !== undefined) {
+                        if (majorParties.length > 0) {
                             infoContent += `<h3>主要政党初回得票率</h3>`;
 
-                            // R党の情報表示
-                            if (rVote !== undefined && rVote !== null) {
-                                if (rVote === INVALID_VALUE) {
-                                    infoContent += `<p class="${currentViewMode === 'R' ? 'highlighted-info-text' : ''}"><b>R</b>: ${formatValue(rRate, true)} (${INVALID_TEXT}票)</p>`;
-                                } else {
-                                    infoContent += `<p class="${currentViewMode === 'R' ? 'highlighted-info-text' : ''}"><b>R</b>: ${formatValue(rRate, true)} (${formatValue(rVote)}票)</p>`;
-                                }
-                            }
-
-                            // D党の情報表示
-                            if (dVote !== undefined && dVote !== null) {
-                                if (dVote === INVALID_VALUE) {
-                                    infoContent += `<p class="${currentViewMode === 'D' ? 'highlighted-info-text' : ''}"><b>D</b>: ${formatValue(dRate, true)} (${INVALID_TEXT}票)</p>`;
-                                } else {
-                                    infoContent += `<p class="${currentViewMode === 'D' ? 'highlighted-info-text' : ''}"><b>D</b>: ${formatValue(dRate, true)} (${formatValue(dVote)}票)</p>`;
-                                }
-                            }
+                            // ソートされた配列から情報を表示
+                            majorParties.forEach(partyData => {
+                                const formattedVote = formatValue(partyData.vote);
+                                const formattedPercentage = formatValue(partyData.rate, true);
+                                infoContent += `<p class="${currentViewMode === partyData.party ? 'highlighted-info-text' : ''}"><b>${partyData.party}</b>: ${formattedPercentage} (${formattedVote}票)</p>`;
+                            });
                         }
 
 
