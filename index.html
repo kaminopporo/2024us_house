@@ -463,12 +463,18 @@
                 line-height: 1.1;
                 /* 行間をさらに詰める */
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-                max-width: calc(100vw - 30px);
-                /* 新規追加: 最大幅を画面幅から余白を引いた値に */
+                /* 画面端に余裕を持たせるための調整 */
+                margin-left: 5px;
+                margin-right: 5px;
+            }
+
+            .leaflet-popup-content {
+                word-break: break-word;
+                /* テキストが画面幅を超えないように自動改行 */
             }
 
             .leaflet-popup-content h2 {
-                font-size: 1.2em;
+                font-size: 1em;
                 /* フォントサイズを調整 */
                 margin-top: 0;
                 margin-bottom: 3px;
@@ -480,7 +486,7 @@
 
             /* スマホポップアップのセクション見出しの文字サイズを小さく */
             .leaflet-popup-content h3 {
-                font-size: 1.1em;
+                font-size: 1em;
                 /* フォントサイズを調整 */
                 margin-top: 5px;
                 margin-bottom: 2px;
@@ -511,18 +517,34 @@
                 /* 行間を詰める */
             }
 
+            .leaflet-popup-content hr {
+                border: none;
+                height: 0.8px;
+                background-color: #e0e0e0;
+                margin: 3px 0;
+                /* 余白をさらに削減 */
+            }
+
+
+            /* Leafletポップアップの閉じるボタンの位置調整 */
+            .leaflet-popup-close-button {
+                top: 5px !important;
+                /* ボタン位置を上へ */
+                right: 10px !important;
+                /* ボタン位置を右へ */
+                font-size: 1.5em;
+                /* ボタンのサイズを小さく */
+            }
+
             /* 説明パネルのスマホ対応 */
             .explanation-panel {
                 margin: auto;
                 align-self: center;
-                width: 90vw;
-                /* 幅を広げる */
-                height: 90vh;
-                /* 高さを広げる */
+                width: 75vw;
+                height: 75vh;
                 max-width: none;
                 max-height: none;
-                padding: 20px;
-                /* パディングを調整 */
+                padding: 30px;
                 box-sizing: border-box;
             }
 
