@@ -39,7 +39,7 @@
         /* サイドバーのスタイル */
         .sidebar {
             width: 300px;
-            background-color: #fff2cc;
+            background-color: #00247d;
             padding: 30px;
             box-sizing: border-box;
             display: flex;
@@ -92,7 +92,12 @@
             margin-bottom: 5px;
             /* タイトルと詳細情報の間のマージンを詰める */
             text-align: left;
-            color: #990000;
+            color: #cc0000;
+            text-shadow:
+                -1px -1px 0 #ffffff,
+                1px -1px 0 #ffffff,
+                -1px 1px 0 #ffffff,
+                1px 1px 0 #ffffff;
             line-height: 1.3;
             display: block;
         }
@@ -109,7 +114,7 @@
             height: 30px;
             font-family: 'Material Icons';
             font-size: 20px;
-            color: #666;
+            color: #000000;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -138,7 +143,7 @@
             border-bottom: 1px solid #e0e0e0;
             padding-bottom: 5px;
             /* 詳細情報のタイトル下パディングを詰める */
-            color: #34495e;
+            color: #e0e0e0;
         }
 
         .legend-item {
@@ -205,7 +210,7 @@
 
         /* 当選政党の凡例スタイル */
         .legend-color-w {
-            background: linear-gradient(to right, #0000ff, #ff0000);
+            background: conic-gradient(#ff0000 0deg 210deg, #0000ff 210deg 360deg);
             /* 複数の色をグラデーションで */
         }
 
@@ -239,7 +244,7 @@
             margin-bottom: 5px;
             border-bottom: 1px solid #e0e0e0;
             padding-bottom: 5px;
-            color: #2c3e50;
+            color: #000000;
         }
 
         /* PCレイアウトの詳細情報パネルの段落スタイル */
@@ -249,13 +254,13 @@
             /* 各行間のマージンを詰める */
             line-height: 1;
             /* 各行の行間を詰める */
-            color: #2c3e50;
+            color: #000000;
             /* テキストの色をより濃く */
         }
 
         /* 詳細情報パネルのスタイル */
         #info-panel {
-            background-color: #fdfdfd;
+            background-color: #ffffff;
             border-radius: 15px;
             padding: 10px 15px;
             /* パネル全体のパディングを詰める */
@@ -269,8 +274,8 @@
         #info-panel h2 {
             font-size: 1.3em;
             margin-top: 0;
-            margin-bottom: 0;
-            color: #2c3e50;
+            margin-bottom: -10px;
+            color: #000000;
             border-bottom: none;
             /* 区切り線を削除 */
         }
@@ -283,7 +288,7 @@
             /* 各行間のマージンを詰める */
             line-height: 1;
             /* 各行の行間を詰める */
-            color: #2c3e50;
+            color: #000000;
             /* テキストの色をより濃く */
         }
 
@@ -334,7 +339,7 @@
 
         .explanation-panel h2 {
             font-size: 1.8em;
-            color: #990000;
+            color: #cc0000;
             margin-top: 0;
             margin-bottom: 20px;
             border-bottom: 2px solid #e0e0e0;
@@ -606,7 +611,6 @@
             <p><strong>特殊な投票制度</strong>:
                 メイン州とアラスカ州ではRCV（順位付け投票）、ルイジアナ州とジョージア州では二回投票制が導入されています。これらの手法を採用する選挙区では、初回投票で過半数に達した候補者がいなかった場合、初回投票結果の各候補者得票率と最終結果を反映した当選政党得票率が異なります。
             </p>
-            <p><strong>クリックで詳細</strong>: 地図上の選挙区をクリックすると、サイドバー（PC）またはポップアップ（スマートフォン）にその選挙区の各政党の得票率詳細が表示されます。</p>
             <p><strong>データソース</strong>: <a href="https://electionlab.mit.edu/"
                     target="_blank">MIT</a>が公開する開票結果のデータに基づいています。</p>
         </div>
